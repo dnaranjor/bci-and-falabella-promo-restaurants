@@ -16,52 +16,60 @@ Plus** (API) and **Banco Falabella / CMR** (SSR HTML). Designed for the
 `restaurant-promos` skill directory at
 `~/.config/opencode/skills/restaurant-promos/`.
 
+## Interactive use
+
+When this skill is triggered, first **ask the user which day of the week**
+they want to query (e.g., "Sábado", "Viernes", "Lunes"). Then run both
+parsers with that day and combine the output.
+
 ## Scripts
 
 ### `bci_parser.py`
-Fetches the BCI Plus offers API, filters for `Restaurantes` category with
-`SABADO` day recurrence, and writes normalized CSV to stdout.
+Fetches the BCI Plus offers API, filters for `Restaurantes` category matching
+the requested day, and writes normalized CSV to stdout.
 
 **Usage:**
 ```
-python ~/.config/opencode/skills/restaurant-promos/bci_parser.py
+python bci_parser.py --day SABADO
 ```
 
 **Output columns:** `Restaurant`, `Discount`, `TDC`, `Cuando`, `Comuna`, `Ends`
 
+- Accepts `--day` with full name (`SABADO`) or 3-letter abbreviation (`SAB`)
 - API key is hardcoded (fa981752762743668413b68821a43840)
 - Paginates through all pages (100 items/page)
 - Comuna extracted from the offer `slug` field
 - **Fallback**: if the live API is unavailable (HTTP 500), outputs the last
-  known cached results (4 BCI restaurants from Jan 2026 research) as a
-  stopgap until the API recovers
+  known cached results (Sábado data from Jan 2026) until the API recovers
 
 ### `falabella_parser.py`
 Fetches the Banco Falabella descuentos/restaurantes page (Next.js SSR),
 extracts the `benefitCardsData` JSON array embedded in
-`self.__next_f.push(...)` payloads, filters for cards available on Sábado,
-and writes CSV to stdout.
+`self.__next_f.push(...)` payloads, filters for cards available on the
+requested day, and writes CSV to stdout.
 
 **Usage:**
 ```
-python ~/.config/opencode/skills/restaurant-promos/falabella_parser.py
+python falabella_parser.py --day Sabado
 ```
 
 **Output columns:** `Restaurant`, `Discount`, `TDC`, `Cuando`, `Comuna`,
 `Ends`, `TipoComida`
 
+- Accepts `--day` in Spanish (`Sabado`, `Viernes`, `Lunes`, etc.)
 - Parses escaped JSON via bracket-depth counting
 - Deduplicates by benefitTitle
 - Detects CMR Elite vs regular CMR
-- Region → Comuna mapping: RM → "Santiago (RM)", RM+Valparaíso →
-  "RM / Valparaiso", Los Lagos → "Region de Los Lagos"
+- Region to Comuna mapping: RM "Santiago (RM)", RM+Valparaíso
+  "RM / Valparaiso", 10+ regions "Nacional"
 
-### Combining both into the full table
+### Combining both for a given day
 
 ```powershell
-$bci = python ~/.config/opencode/skills/restaurant-promos/bci_parser.py 2>$null
-$bf  = python ~/.config/opencode/skills/restaurant-promos/falabella_parser.py 2>$null
-($bci.Trim() + "`n" + $bf.Trim()) | Set-Content -Path "C:\Users\dnara\OneDrive\Desktop\restaurantes_descuentos.csv"
+$day = "Sabado"
+$bci = python ~/.config/opencode/skills/restaurant-promos/bci_parser.py --day ($day.ToUpper()) 2>$null
+$bf  = python ~/.config/opencode/skills/restaurant-promos/falabella_parser.py --day $day 2>$null
+($bci.Trim() + "`n" + $bf.Trim()) | Set-Content -Path "restaurantes_$day.csv"
 ```
 
 Or from Python directly:
@@ -69,30 +77,31 @@ Or from Python directly:
 ```python
 import subprocess, sys
 base = r"C:\Users\dnara\.config\opencode\skills\restaurant-promos"
-bci = subprocess.run([sys.executable, f"{base}\\bci_parser.py"],
+day = "Sabado"
+bci = subprocess.run([sys.executable, f"{base}\\bci_parser.py", "--day", day.upper()],
     capture_output=True, text=True).stdout
-bf  = subprocess.run([sys.executable, f"{base}\\falabella_parser.py"],
+bf  = subprocess.run([sys.executable, f"{base}\\falabella_parser.py", "--day", day],
     capture_output=True, text=True).stdout
-with open("restaurantes.csv", "w", encoding="utf-8") as f:
+with open(f"restaurantes_{day}.csv", "w", encoding="utf-8") as f:
     f.write(bci.strip() + "\n" + bf.strip())
 ```
 
-## Enrichment steps (performed manually)
-
-After generating the combined CSV:
+## Enrichment steps (performed manually after fetching raw data)
 
 1. **TipoComida** — fill via restaurant description/name research
-   (e.g., `"India"`, `"Peruana"`, `"Japonesa"`, `"Parrilla"`, etc.)
+   (e.g., "India", "Peruana", "Japonesa", "Parrilla", etc.)
 2. **Recomendacion** — research prices, ratings, atmosphere; write a
    recommendation per restaurant with budget estimates
-3. **Ranking** — sort rows 1–N by suitability for the user's preferences
-   (couple late 50s, budget CLP 20K–25K pp incl. alcohol, quality dining,
-   adventurous palate)
+3. **Ranking** — sort rows 1-N by suitability for the user's profile
 
-## Cached reference data
+## Day name reference
 
-- Full 32-row table with TipoComida and Recomendacion is kept in the
-  conversation summary (in-memory). Ask the assistant for the current table.
-- Raw source data and previous PowerShell parsing scripts are in:
-  `C:\Users\dnara\AppData\Local\Temp\opencode\`
-- Extracted BF cards JSON: `cards_full.json`
+| Day | BCI (`--day`) | Falabella (`--day`) |
+|-----|---------------|---------------------|
+| Monday | LUNES | Lunes |
+| Tuesday | MARTES | Martes |
+| Wednesday | MIERCOLES | Miércoles |
+| Thursday | JUEVES | Jueves |
+| Friday | VIERNES | Viernes |
+| Saturday | SABADO | Sábado |
+| Sunday | DOMINGO | Domingo |

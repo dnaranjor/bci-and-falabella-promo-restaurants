@@ -2,12 +2,12 @@
 """Fetch and parse BCI restaurant promotions from the BCI Plus API.
 
 Usage:
-    python bci_parser.py
+    python bci_parser.py [--day SABADO]
 
 Outputs CSV to stdout with columns: Restaurant, Discount, TDC, Cuando, Comuna, Ends.
+Default day is SABADO if --day is omitted.
 
-If the live API is unavailable, outputs the last known cached data
-from the January 2026 research session as a fallback.
+If the live API is unavailable, outputs the last known cached data.
 """
 
 import csv
@@ -21,7 +21,8 @@ API_URL = "https://api.bciplus.cl/bff-loyalty-beneficios/v1/offers"
 API_KEY = "fa981752762743668413b68821a43840"
 ITEMS_PER_PAGE = 100
 CATEGORY = "Restaurantes"
-DAY = "SABADO"
+
+BCI_DAYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
 
 LAST_KNOWN_DATA = [
     {"Restaurant": "Burgerholic", "Discount": "20%", "TDC": "Bci", "Cuando": "Sabado", "Comuna": "Lo Barnechea", "Ends": "01/01/2027"},
@@ -65,14 +66,14 @@ def format_date(iso_str: str) -> str:
         return (iso_str or "")[:10]
 
 
-def extract_restaurants(data: dict) -> list[dict]:
+def extract_restaurants(data: dict, day: str) -> list[dict]:
     restaurants = []
     for offer in data.get("ofertas", []):
         cats = [c["titulo"] for c in offer.get("categorias", [])]
         if CATEGORY not in cats:
             continue
         days = offer.get("scheduling", {}).get("dayRecurrence", [])
-        if DAY not in days and days:
+        if day not in days and days:
             continue
         name = offer.get("comercio", {}).get("nombre", "").strip() or offer.get("titulo", "").strip()
         discount = offer.get("beneficio", {}).get("discount", {}).get("porcentajeDescuento", 0)
@@ -80,29 +81,53 @@ def extract_restaurants(data: dict) -> list[dict]:
             "Restaurant": name,
             "Discount": f"{discount}%",
             "TDC": "Bci",
-            "Cuando": "Sabado",
+            "Cuando": day.capitalize(),
             "Comuna": extract_comuna(offer.get("slug", "")),
             "Ends": format_date(offer.get("fechaTermino", "")),
         })
     return restaurants
 
 
+def parse_args() -> str:
+    day = "SABADO"
+    raw = None
+    argv = sys.argv[1:]
+    for i, a in enumerate(argv):
+        if a == "--day" and i + 1 < len(argv):
+            raw = argv[i + 1]
+            break
+        if a.startswith("--day="):
+            raw = a.split("=", 1)[1]
+            break
+    if raw:
+        for bci_day in BCI_DAYS:
+            if raw.upper() == bci_day or raw.upper() == bci_day[:3]:
+                day = bci_day
+                break
+        else:
+            print(f"Invalid day '{raw}'. Choose from: {', '.join(BCI_DAYS)}", file=sys.stderr)
+            sys.exit(1)
+    return day
+
+
 def main():
+    day = parse_args()
     all_restaurants = []
     data = fetch_page(0)
+
     if data is None:
         for page in range(1, 3):
             d = fetch_page(page)
             if d:
-                all_restaurants.extend(extract_restaurants(d))
+                all_restaurants.extend(extract_restaurants(d, day))
 
     if data:
         pag = data.get("paginado", {})
-        all_restaurants.extend(extract_restaurants(data))
+        all_restaurants.extend(extract_restaurants(data, day))
         for page in range(1, pag.get("totalPaginas", 1)):
             d = fetch_page(page)
             if d:
-                all_restaurants.extend(extract_restaurants(d))
+                all_restaurants.extend(extract_restaurants(d, day))
 
     if not all_restaurants:
         print("BCI API unavailable, using last known cached data.", file=sys.stderr)

@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Fetch and parse Banco Falabella restaurant promotions from SSR HTML."""
+"""Fetch and parse Banco Falabella restaurant promotions from SSR HTML.
+
+Usage:
+    python falabella_parser.py [--day Sabado]
+
+Outputs CSV to stdout with columns: Restaurant, Discount, TDC, Cuando, Comuna, Ends, TipoComida.
+Default day is Sabado if --day is omitted.
+"""
 
 import csv
 import json
-import re
 import sys
 import urllib.request
 import urllib.error
@@ -11,6 +17,14 @@ from datetime import datetime
 
 BF_URL = "https://www.bancofalabella.cl/descuentos/restaurantes"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+BF_DAYS_MAP = {
+    "LUNES": "Lunes", "MARTES": "Martes", "MIERCOLES": "Miércoles",
+    "JUEVES": "Jueves", "VIERNES": "Viernes", "SABADO": "Sábado",
+    "DOMINGO": "Domingo",
+}
+DAYS_ORDER = {"Lun": 0, "Mar": 1, "Mie": 2, "Jue": 3, "Vie": 4, "Sab": 5, "Dom": 6}
+ALL_DAYS = {"Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"}
 
 
 def fetch_html(url: str) -> str:
@@ -26,7 +40,7 @@ def extract_benefit_cards(html: str) -> list[dict]:
 
     colon_idx = html.find(":[", idx)
     if colon_idx == -1:
-        raise ValueError("'':['' not found after benefitCardsData")
+        raise ValueError("':[' not found after benefitCardsData")
 
     arr_start = colon_idx + 1
     depth = 0
@@ -64,12 +78,14 @@ def format_date(iso_str: str) -> str:
         return iso_str[:10] if iso_str else ""
 
 
-def has_sabado(discount_days: list | None) -> bool:
+def has_day(discount_days: list | None, target_day: str) -> bool:
     if not discount_days:
         return False
+    target_lower = target_day.lower()
+    target_prefix = target_day[:3].lower()
     for d in discount_days:
         dl = d.lower()
-        if "sab" in dl or "sáb" in dl:
+        if target_prefix in dl or target_lower in dl:
             return True
     return False
 
@@ -97,10 +113,6 @@ def format_days(discount_days: list | None) -> str:
         else:
             days.append(d)
     return ", ".join(dict.fromkeys(days))
-
-
-DAYS_ORDER = {"Lun": 0, "Mar": 1, "Mie": 2, "Jue": 3, "Vie": 4, "Sab": 5, "Dom": 6}
-ALL_DAYS = {"Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"}
 
 
 def normalize_cuando(days_str: str) -> str:
@@ -138,7 +150,34 @@ def simplify_card(card: dict) -> str:
     return "CMR"
 
 
+def parse_args() -> str:
+    target = "Sábado"
+    raw = None
+    argv = sys.argv[1:]
+    for i, a in enumerate(argv):
+        if a == "--day" and i + 1 < len(argv):
+            raw = argv[i + 1]
+            break
+        if a.startswith("--day="):
+            raw = a.split("=", 1)[1]
+            break
+    if raw:
+        upper = raw.upper()
+        if upper in BF_DAYS_MAP:
+            target = BF_DAYS_MAP[upper]
+        else:
+            for key, val in BF_DAYS_MAP.items():
+                if upper == key[:3] or raw.lower() in val.lower():
+                    target = val
+                    break
+            else:
+                print(f"Invalid day '{raw}'. Choose from: {', '.join(BF_DAYS_MAP.values())}", file=sys.stderr)
+                sys.exit(1)
+    return target
+
+
 def main():
+    target_day = parse_args()
     html = fetch_html(BF_URL)
     cards = extract_benefit_cards(html)
 
@@ -156,7 +195,7 @@ def main():
             continue
 
         discount_days = card.get("benefitCard", {}).get("discountDays", [])
-        if not has_sabado(discount_days):
+        if not has_day(discount_days, target_day):
             continue
 
         dedup_key = benefit_title.lower().strip()
