@@ -14,24 +14,56 @@ Install this skill via `skills.urls` in your `opencode.json`:
 }
 ```
 
-Then ask opencode:
+Then ask opencode — the skill will ask you which day of the week you want:
 
-> *"Fetch the latest restaurant deals from BCI and Falabella for this Saturday"*
+> *"Show me restaurant deals from BCI and Falabella"*
 
-Or run the scripts directly:
+Or specify the day explicitly:
+
+> *"Fetch restaurant promotions for this Friday from both banks"*
+
+### Direct script execution
+
+Both parsers accept a `--day` argument. Default is Saturday.
 
 ```powershell
+# Saturday (default)
 python .opencode/skills/restaurant-promos/bci_parser.py
 python .opencode/skills/restaurant-promos/falabella_parser.py
+
+# Any other day
+python .opencode/skills/restaurant-promos/bci_parser.py --day VIERNES
+python .opencode/skills/restaurant-promos/falabella_parser.py --day Viernes
 ```
+
+### Combine both sources for a given day
+
+```powershell
+$day = "Sabado"
+$bci = python .opencode/skills/restaurant-promos/bci_parser.py --day ($day.ToUpper()) 2>$null
+$bf  = python .opencode/skills/restaurant-promos/falabella_parser.py --day $day 2>$null
+($bci.Trim() + "`n" + $bf.Trim()) | Set-Content -Path "restaurantes_$day.csv"
+```
+
+## Day name reference
+
+| Day | BCI (`--day`) | Falabella (`--day`) |
+|-----|---------------|---------------------|
+| Monday | LUNES | Lunes |
+| Tuesday | MARTES | Martes |
+| Wednesday | MIERCOLES | Miércoles |
+| Thursday | JUEVES | Jueves |
+| Friday | VIERNES | Viernes |
+| Saturday | SABADO | Sábado |
+| Sunday | DOMINGO | Domingo |
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | `.opencode/skills/restaurant-promos/SKILL.md` | Skill manifest & instructions |
-| `.opencode/skills/restaurant-promos/bci_parser.py` | BCI Plus API → restaurants on Sábado → CSV |
-| `.opencode/skills/restaurant-promos/falabella_parser.py` | Falabella SSR HTML → benefit cards on Sábado → CSV |
+| `.opencode/skills/restaurant-promos/bci_parser.py` | BCI Plus API → restaurants by day → CSV |
+| `.opencode/skills/restaurant-promos/falabella_parser.py` | Falabella SSR HTML → benefit cards by day → CSV |
 
 ## Output columns
 
