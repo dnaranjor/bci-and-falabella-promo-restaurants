@@ -36,11 +36,12 @@ python bci_parser.py --day SABADO
 **Output columns:** `Restaurant`, `Discount`, `TDC`, `Cuando`, `Comuna`, `Ends`
 
 - Accepts `--day` with full name (`SABADO`) or 3-letter abbreviation (`SAB`)
-- API key is hardcoded (fa981752762743668413b68821a43840)
-- Paginates through all pages (100 items/page)
+- Tries two known API keys
+- Paginates through all pages (100 items/page via `itemsPorPagina=100&pagina=N`)
 - Comuna extracted from the offer `slug` field
-- **Fallback**: if the live API is unavailable (HTTP 500), outputs the last
-  known cached results (Sábado data from Jan 2026) until the API recovers
+- Uses the same API parameters as the BCI frontend Vue.js widget
+- Previously returned HTTP 500 due to incorrect parameter format (`page`/`size`
+  instead of `pagina`/`itemsPorPagina`)
 
 ### `falabella_parser.py`
 Fetches the Banco Falabella descuentos/restaurantes page (Next.js SSR),

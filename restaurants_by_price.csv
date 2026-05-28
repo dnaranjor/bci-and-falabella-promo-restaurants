@@ -1,0 +1,51 @@
+Restaurant,Discount,TDC,Cuando,Comuna,Ends,Est. pp (CLP),Tipo
+Starburger,20%,BCI,Jueves,Santiago (RM),01/07/2026,7000,Fast food - hamburguesas
+Berlín Doner Kebab,40%,CMR,"Lun, Mar, Jue",Santiago (RM),31/05/2026,8000,Fast casual - kebab
+La Caperucita y el Lobo,40%,BCI,Jueves,Santiago (RM),01/06/2026,25000,Cocina de autor (50 Best Discovery)
+Tigre Bravo,40%,BCI,Jueves,Santiago (RM),01/07/2026,15000,Peruano
+La sanguchera del barrio,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,9000,Sanguches
+Fuente Suiza,40%,CMR,"Lun, Mar, Mie, Jue",Santiago (RM),31/05/2026,10000,Fuente de soda clásica
+De Barrio,30%,BCI,Jueves,Santiago (RM),01/06/2026,10000,Casual
+De Barrio,40%,CMR,"Lun, Mar, Mie, Jue",Santiago (RM),31/05/2026,10000,Casual
+China 365,20%,BCI,Jueves,Santiago (RM),30/06/2026,10000,Comida china
+Fat Kid,40%,BCI,Jueves,Santiago (RM),01/07/2026,10000,Hamburguesas
+Güeros,30%,BCI,Jueves,Santiago (RM),01/07/2026,10000,Mexican
+Take a wok,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Wok/comida asiática
+Badass,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Casual
+El japones,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Comida japonesa
+Mamma mia,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Pizza/pasta
+La piazza,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Pizza/pasta
+La patrona,40%,CMR,"Lun, Mar, Mie, Jue",Santiago (RM),31/05/2026,10000,Cocina chilena
+Paris texas,40%,CMR,"Lun, Mar, Mie, Jue",Santiago (RM),31/05/2026,10000,Bar
+El Bodegon,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,10000,Casual
+Local Burger,40%,CMR,Jue,Santiago (RM),31/05/2026,10000,Hamburguesas
+Anima Cocktail Bar / Lab,40%,BCI,Jueves,Providencia,01/06/2026,12000,Coctelería
+Anima Cocktail Lab,40%,CMR,"Mie, Jue, Sab",Santiago (RM),31/05/2026,12000,Coctelería
+Enrique Tomás,40%,CMR,Lun-Vie,Santiago (RM),31/05/2026,12000,Jamonería
+Frida Kahlo,40%,CMR,Lun-Dom,Santiago (RM),31/05/2026,12000,Mexican
+Jalisco,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,12000,Mexican
+Udon,40%,CMR,Lun-Vie,Santiago (RM),31/05/2026,12000,Comida asiática
+Meson del marinero,40%,CMR,Mie-Sab,Santiago (RM),31/05/2026,12000,Mariscos
+ConserBar,40%,BCI,Jueves,Santiago (RM),01/07/2026,12000,Bar
+Hijo del Inca,40%,BCI,Jueves,Santiago (RM),01/07/2026,12000,Peruvian
+Wayna,40%,BCI,Jueves,Santiago (RM),01/07/2026,12000,Peruvian
+Cantina Varas,40%,CMR,Lun-Sab,Santiago (RM),31/05/2026,12000,Cantina chilena
+Mooi,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,12000,Casual
+Vendetta,40%,CMR,Lun-Jue,Santiago (RM),31/05/2026,12000,Italiano
+Milán,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,12000,Casual
+Ekeko,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,13000,Peruvian
+Cuerovaca,40%,BCI,Jueves,Vitacura,01/07/2026,15000,Parrilla
+La Cocina de Javier,50%,BCI,Jueves,Vitacura,01/07/2026,15000,Cocina española
+La Cocina de Javier,15%,CMR,Jue,Santiago (RM),31/05/2026,15000,Cocina española
+Kechua,30%,BCI,Jueves,Providencia,01/07/2026,15000,Peruvian
+Tanta,40%,CMR,Todos los dias,RM / Valparaiso,31/05/2026,15000,Peruvian
+Barra Chalaca,40%,CMR,Todos los dias,RM / Valparaiso,31/05/2026,15000,Mariscos
+La santoría,40%,CMR,Mie-Dom,Santiago (RM),31/05/2026,15000,Griego/mediterráneo
+Siete cortes,40%,CMR,Mie-Sab,Santiago (RM),31/05/2026,15000,Carnes
+Pescados capitales,40%,CMR Elite,Jue,Santiago (RM),31/05/2026,18000,Pescados/mariscos
+La Biferia,20%,BCI,Jueves,Providencia,01/07/2026,18000,Parrilla
+La Parrilla del Guaton Jerez,40%,BCI,Jueves,Vitacura,01/06/2026,20000,Parrilla
+Cabrera al Paso,40%,CMR,Todos los dias,Santiago (RM),31/05/2026,20000,Parrilla argentina
+Muu grill,40%,CMR,Todos los dias,RM / Valparaiso,31/05/2026,22000,Steakhouse
+Majestic,30%,BCI,Jueves,Vitacura,01/07/2026,25000,Gourmet
+Marriott (Latin Grill),50%,BCI,Jueves,Las Condes,01/07/2026,30000,Hotel - internacional

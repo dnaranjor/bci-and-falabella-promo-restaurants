@@ -1,58 +1,86 @@
 #!/usr/bin/env python3
-"""Fetch and parse BCI restaurant promotions from the BCI Plus API.
+"""Fetch and parse BCI restaurant promotions.
+
+Uses the BCI Plus API with the same parameters as the frontend widget:
+  GET /offers?itemsPorPagina=100&pagina=N
+  Header: Ocp-Apim-Subscription-Key
 
 Usage:
     python bci_parser.py [--day SABADO]
-
-Outputs CSV to stdout with columns: Restaurant, Discount, TDC, Cuando, Comuna, Ends.
-Default day is SABADO if --day is omitted.
-
-If the live API is unavailable, outputs the last known cached data.
 """
 
 import csv
 import json
+import re
 import sys
 import urllib.request
 import urllib.error
 from datetime import datetime
 
 API_URL = "https://api.bciplus.cl/bff-loyalty-beneficios/v1/offers"
-API_KEY = "fa981752762743668413b68821a43840"
+API_KEYS = [
+    "fa981752762743668413b68821a43840",
+    "0d4842f95aa040c68920935ad43daba7",
+]
 ITEMS_PER_PAGE = 100
 CATEGORY = "Restaurantes"
 
 BCI_DAYS = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
 
-LAST_KNOWN_DATA = [
-    {"Restaurant": "Burgerholic", "Discount": "20%", "TDC": "Bci", "Cuando": "Sabado", "Comuna": "Lo Barnechea", "Ends": "01/01/2027"},
-    {"Restaurant": "Majestic", "Discount": "30%", "TDC": "Bci", "Cuando": "Sabado", "Comuna": "Vitacura", "Ends": "01/07/2026"},
-    {"Restaurant": "Oporto salvaje", "Discount": "50%", "TDC": "Bci", "Cuando": "Sabado", "Comuna": "Santiago (RM)", "Ends": "01/08/2026"},
-    {"Restaurant": "Starburger", "Discount": "20%", "TDC": "Bci", "Cuando": "Sabado", "Comuna": "Santiago (RM)", "Ends": "01/01/2027"},
-]
+COMUNA_MAP = {
+    "vitacura": "Vitacura",
+    "lo-barnechea": "Lo Barnechea",
+    "las-condes": "Las Condes",
+    "providencia": "Providencia",
+    "nunoa": "Santiago (RM)",
+    "la-florida": "Santiago (RM)",
+    "maipu": "Santiago (RM)",
+    "reina": "Santiago (RM)",
+    "arica": "Arica",
+    "iquique": "Iquique",
+    "valparaiso": "Valpara\u00edso",
+    "vina-del-mar": "Vi\u00f1a del Mar",
+    "renaca": "Vi\u00f1a del Mar",
+    "concepcion": "Concepci\u00f3n",
+    "talca": "Talca",
+    "valdivia": "Valdivia",
+    "puerto-varas": "Puerto Varas",
+}
 
 
-def fetch_page(page: int) -> dict | None:
-    url = f"{API_URL}?page={page}&size={ITEMS_PER_PAGE}&sort=prioridad,desc"
-    req = urllib.request.Request(url, headers={
-        "Ocp-Apim-Subscription-Key": API_KEY,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    })
+def fetch_page(page: int, api_key: str) -> dict | None:
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    url = f"{API_URL}?itemsPorPagina={ITEMS_PER_PAGE}&pagina={page}"
+    headers = {
+        "Ocp-Apim-Subscription-Key": api_key,
+        "User-Agent": ua,
+    }
     try:
+        req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        print(f"BCI API error (HTTP {e.code})", file=sys.stderr)
-        return None
+        body = e.read().decode("utf-8", errors="replace")
+        return {"_error": e.code, "_body": body}
+    except urllib.error.URLError as e:
+        return {"_error": "connection", "_body": str(e.reason)}
+
+
+def try_api(page: int) -> dict | None:
+    for key in API_KEYS:
+        result = fetch_page(page, key)
+        if result is None:
+            continue
+        err = result.get("_error")
+        if err:
+            continue
+        if "ofertas" in result:
+            return result
+    return None
 
 
 def extract_comuna(slug: str) -> str:
-    for key, comuna in {
-        "vitacura": "Vitacura",
-        "lo-barnechea": "Lo Barnechea",
-        "las-condes": "Las Condes",
-        "providencia": "Providencia",
-    }.items():
+    for key, comuna in COMUNA_MAP.items():
         if key in slug.lower():
             return comuna
     return "Santiago (RM)"
@@ -77,14 +105,17 @@ def extract_restaurants(data: dict, day: str) -> list[dict]:
             continue
         name = offer.get("comercio", {}).get("nombre", "").strip() or offer.get("titulo", "").strip()
         discount = offer.get("beneficio", {}).get("discount", {}).get("porcentajeDescuento", 0)
-        restaurants.append({
+        slug = offer.get("slug", "")
+        rest_data = {
             "Restaurant": name,
             "Discount": f"{discount}%",
             "TDC": "Bci",
             "Cuando": day.capitalize(),
-            "Comuna": extract_comuna(offer.get("slug", "")),
+            "Comuna": extract_comuna(slug),
             "Ends": format_date(offer.get("fechaTermino", "")),
-        })
+        }
+        if rest_data not in restaurants:
+            restaurants.append(rest_data)
     return restaurants
 
 
@@ -113,27 +144,22 @@ def parse_args() -> str:
 def main():
     day = parse_args()
     all_restaurants = []
-    data = fetch_page(0)
 
-    if data is None:
-        for page in range(1, 3):
-            d = fetch_page(page)
-            if d:
-                all_restaurants.extend(extract_restaurants(d, day))
-
-    if data:
+    data = try_api(1)
+    if data and "ofertas" in data:
         pag = data.get("paginado", {})
         all_restaurants.extend(extract_restaurants(data, day))
-        for page in range(1, pag.get("totalPaginas", 1)):
-            d = fetch_page(page)
-            if d:
+        total_pages = pag.get("totalPaginas", 1)
+        for page in range(2, total_pages + 1):
+            d = try_api(page)
+            if d and "ofertas" in d:
                 all_restaurants.extend(extract_restaurants(d, day))
 
     if not all_restaurants:
-        print("BCI API unavailable, using last known cached data.", file=sys.stderr)
-        all_restaurants = LAST_KNOWN_DATA
+        print("BCI API unavailable. No restaurant data found.", file=sys.stderr)
 
-    writer = csv.DictWriter(sys.stdout, fieldnames=["Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends"])
+    fieldnames = ["Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends"]
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
     writer.writeheader()
     for r in sorted(all_restaurants, key=lambda x: x["Restaurant"]):
         writer.writerow(r)
