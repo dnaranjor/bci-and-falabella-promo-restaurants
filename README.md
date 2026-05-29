@@ -1,20 +1,10 @@
 # BCI & Falabella Promo Restaurants
 
-**opencode skill** that fetches, parses, and combines Chilean restaurant promotions from BCI Plus (API) and Banco Falabella / CMR (SSR HTML).
+**AI skill** that fetches, parses, and combines Chilean restaurant promotions from BCI Plus (API) and Banco Falabella / CMR (SSR HTML).
 
 ## Usage
 
-Install this skill via `skills.urls` in your `opencode.json`:
-
-```json
-{
-  "skills": {
-    "urls": ["https://raw.githubusercontent.com/dnaranjor/bci-and-falabella-promo-restaurants/main/.opencode/skills/restaurant-promos/SKILL.md"]
-  }
-}
-```
-
-Then ask opencode — the skill will ask you which day of the week you want:
+Install this skill in your preferred AI Agent folder. Then ask the agent — the skill will ask you which day of the week you want:
 
 > *"Show me restaurant deals from BCI and Falabella"*
 
@@ -70,10 +60,10 @@ python .opencode/skills/restaurant-promos/tools/combine.py --day SABADO > restau
 
 | File | Purpose |
 |---|---|
-| `.opencode/skills/restaurant-promos/SKILL.md` | Skill manifest & instructions |
-| `.opencode/skills/restaurant-promos/tools/combine.py` | Merges both parsers → unified table (standard entry point) |
-| `.opencode/skills/restaurant-promos/tools/bci_parser.py` | BCI Plus API → restaurants by day → CSV |
-| `.opencode/skills/restaurant-promos/tools/falabella_parser.py` | Falabella SSR HTML → benefit cards by day → CSV |
+| `skills/restaurant-promos/SKILL.md` | Skill manifest & instructions |
+| `skills/restaurant-promos/tools/combine.py` | Merges both parsers → unified table (standard entry point) |
+| `skills/restaurant-promos/tools/bci_parser.py` | BCI Plus API → restaurants by day → CSV |
+| `skills/restaurant-promos/tools/falabella_parser.py` | Falabella SSR HTML → benefit cards by day → CSV |
 
 ## Standard output columns (combine.py)
 
@@ -81,9 +71,5 @@ python .opencode/skills/restaurant-promos/tools/combine.py --day SABADO > restau
 
 Filtered to Santiago / Región Metropolitana, deduplicated by name.
 `Details` shows deal-specific info (location, timing, constraints).
-
-## Notes
-
-- BCI API key is hardcoded (`fa981752762743668413b68821a43840`)
 - If the BCI API is down, the script falls back to the last known cached data
 - Falabella data is extracted from the Next.js SSR page via bracket-depth JSON parsing
