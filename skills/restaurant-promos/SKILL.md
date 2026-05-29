@@ -19,8 +19,17 @@ Plus** (API) and **Banco Falabella / CMR** (SSR HTML). Designed for the
 ## Interactive use
 
 When this skill is triggered, first **ask the user which day of the week**
-they want to query (e.g., "Sábado", "Viernes", "Lunes"). Then run both
-parsers with that day and combine the output.
+they want to query (e.g., "Sábado", "Viernes", "Lunes"). Then run the
+combine script which merges both sources and outputs a unified table.
+
+### Standard output table
+
+| Restaurant | Discount | Bank | Comuna | Ends | Details |
+|---|---|---|---|---|---|
+
+Filtered to Santiago / Región Metropolitana, deduplicated by restaurant name,
+sorted alphabetically. The `Bank` column shows `Bci`, `CMR`, or `CMR Elite`.
+The `Details` column shows deal-specific info (location, timing, constraints).
 
 ## Scripts
 
@@ -64,28 +73,40 @@ python falabella_parser.py --day Sabado
 - Region to Comuna mapping: RM "Santiago (RM)", RM+Valparaíso
   "RM / Valparaiso", 10+ regions "Nacional"
 
-### Combining both for a given day
+### Combining both for a given day (using combine.py)
 
 ```powershell
-$day = "Sabado"
-$bci = python ~/.config/opencode/skills/restaurant-promos/bci_parser.py --day ($day.ToUpper()) 2>$null
-$bf  = python ~/.config/opencode/skills/restaurant-promos/falabella_parser.py --day $day 2>$null
-($bci.Trim() + "`n" + $bf.Trim()) | Set-Content -Path "restaurantes_$day.csv"
+python .opencode/skills/restaurant-promos/tools/combine.py --day SABADO > restaurantes_sabado.csv
 ```
 
-Or from Python directly:
+From Python directly:
 
 ```python
 import subprocess, sys
-base = r"C:\Users\dnara\.config\opencode\skills\restaurant-promos"
-day = "Sabado"
-bci = subprocess.run([sys.executable, f"{base}\\bci_parser.py", "--day", day.upper()],
-    capture_output=True, text=True).stdout
-bf  = subprocess.run([sys.executable, f"{base}\\falabella_parser.py", "--day", day],
-    capture_output=True, text=True).stdout
-with open(f"restaurantes_{day}.csv", "w", encoding="utf-8") as f:
-    f.write(bci.strip() + "\n" + bf.strip())
+base = r"C:\Users\dnara\.config\opencode\skills\restaurant-promos\tools"
+day = "SABADO"
+result = subprocess.run([sys.executable, f"{base}\\combine.py", "--day", day],
+    capture_output=True, text=True)
+with open(f"restaurantes_{day.lower()}.csv", "w", encoding="utf-8") as f:
+    f.write(result.stdout)
 ```
+
+### `combine.py` (standard entry point)
+
+Merges both parsers into a Markdown table. Filters to Santiago /
+Región Metropolitana, deduplicates by name, sorts alphabetically.
+
+**Usage:**
+```
+python combine.py --day SABADO
+```
+
+**Output columns:** `Restaurant`, `Discount`, `Bank`, `Comuna`, `Ends`, `Details`
+
+- Accepts `--day` with BCI-style day names (e.g., `SABADO`, `VIERNES`)
+- Runs both parsers internally, then filters, deduplicates, and merges
+- `Bank` column shows `Bci`, `CMR`, or `CMR Elite`
+- Output is a formatted Markdown table (pipe-delimited)
 
 ## Enrichment steps (performed manually after fetching raw data)
 
