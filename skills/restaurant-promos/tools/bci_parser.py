@@ -106,6 +106,7 @@ def extract_restaurants(data: dict, day: str) -> list[dict]:
         name = offer.get("comercio", {}).get("nombre", "").strip() or offer.get("titulo", "").strip()
         discount = offer.get("beneficio", {}).get("discount", {}).get("porcentajeDescuento", 0)
         slug = offer.get("slug", "")
+        title = offer.get("titulo", "")
         rest_data = {
             "Restaurant": name,
             "Discount": f"{discount}%",
@@ -113,6 +114,7 @@ def extract_restaurants(data: dict, day: str) -> list[dict]:
             "Cuando": day.capitalize(),
             "Comuna": extract_comuna(slug),
             "Ends": format_date(offer.get("fechaTermino", "")),
+            "Details": title,
         }
         if rest_data not in restaurants:
             restaurants.append(rest_data)
@@ -158,7 +160,7 @@ def main():
     if not all_restaurants:
         print("BCI API unavailable. No restaurant data found.", file=sys.stderr)
 
-    fieldnames = ["Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends"]
+    fieldnames = ["Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends", "Details"]
     writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
     writer.writeheader()
     for r in sorted(all_restaurants, key=lambda x: x["Restaurant"]):

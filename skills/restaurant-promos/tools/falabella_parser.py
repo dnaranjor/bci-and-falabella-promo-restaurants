@@ -176,13 +176,40 @@ def parse_args() -> str:
     return target
 
 
+def format_details(bc: dict) -> str:
+    desc = bc.get("description", "").strip()
+    top = bc.get("topDiscountText", "").strip()
+    center = bc.get("centerDiscountText", "").strip()
+    bottom = bc.get("bottomDiscountText", "").strip()
+    parts = []
+
+    if top and top != "Hasta" and top != "":
+        if center and "%" not in center:
+            parts.append(f"{top} {center}")
+        else:
+            parts.append(top)
+
+    if desc and "Exclusivo" in desc:
+        breve = desc.replace("Exclusivo ", "").strip().rstrip(".")
+        if breve:
+            parts.append(breve.capitalize())
+
+    if bottom and bottom.lower() not in ("sin tope", "sin tope "):
+        parts.append(bottom)
+
+    result = ". ".join(parts)
+    if not result:
+        result = desc
+    return result
+
+
 def main():
     target_day = parse_args()
     html = fetch_html(BF_URL)
     cards = extract_benefit_cards(html)
 
     writer = csv.DictWriter(sys.stdout, fieldnames=[
-        "Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends", "TipoComida"
+        "Restaurant", "Discount", "TDC", "Cuando", "Comuna", "Ends", "Details"
     ])
     writer.writeheader()
 
@@ -206,6 +233,7 @@ def main():
         discount = card.get("discount", 0)
         end_date = format_date(card.get("benefitCard", {}).get("endDate", ""))
         regions = card.get("region", [])
+        bc = card.get("benefitCard", {})
 
         days_raw = format_days(discount_days)
         cuando = normalize_cuando(days_raw)
@@ -217,7 +245,7 @@ def main():
             "Cuando": cuando,
             "Comuna": region_to_comuna(regions),
             "Ends": end_date,
-            "TipoComida": "",
+            "Details": format_details(bc),
         })
 
 

@@ -22,33 +22,42 @@ Or specify the day explicitly:
 
 > *"Fetch restaurant promotions for this Friday from both banks"*
 
+### Standard output
+
+Running `combine.py` outputs a formatted **Markdown table** (pipe-delimited)
+ready for display or copying into documents.
+
 ### Direct script execution
 
 Both parsers accept a `--day` argument. Default is Saturday.
 
 ```powershell
-# Saturday (default)
-python .opencode/skills/restaurant-promos/bci_parser.py
-python .opencode/skills/restaurant-promos/falabella_parser.py
+# Saturday (default) — unified output
+python .opencode/skills/restaurant-promos/tools/combine.py
+
+# Run individual parsers
+python .opencode/skills/restaurant-promos/tools/bci_parser.py
+python .opencode/skills/restaurant-promos/tools/falabella_parser.py
 
 # Any other day
-python .opencode/skills/restaurant-promos/bci_parser.py --day VIERNES
-python .opencode/skills/restaurant-promos/falabella_parser.py --day Viernes
+python .opencode/skills/restaurant-promos/tools/combine.py --day VIERNES
+python .opencode/skills/restaurant-promos/tools/bci_parser.py --day VIERNES
+python .opencode/skills/restaurant-promos/tools/falabella_parser.py --day Viernes
 ```
 
 ### Combine both sources for a given day
 
+The standard entry point is `combine.py`, which merges both sources into a
+unified table (Santiago/RM only, deduplicated, sorted):
+
 ```powershell
-$day = "Sabado"
-$bci = python .opencode/skills/restaurant-promos/bci_parser.py --day ($day.ToUpper()) 2>$null
-$bf  = python .opencode/skills/restaurant-promos/falabella_parser.py --day $day 2>$null
-($bci.Trim() + "`n" + $bf.Trim()) | Set-Content -Path "restaurantes_$day.csv"
+python .opencode/skills/restaurant-promos/tools/combine.py --day SABADO > restaurantes_sabado.csv
 ```
 
 ## Day name reference
 
-| Day | BCI (`--day`) | Falabella (`--day`) |
-|-----|---------------|---------------------|
+| Day | BCI / combine (`--day`) | Falabella (`--day`) |
+|-----|-------------------------|---------------------|
 | Monday | LUNES | Lunes |
 | Tuesday | MARTES | Martes |
 | Wednesday | MIERCOLES | Miércoles |
@@ -62,12 +71,16 @@ $bf  = python .opencode/skills/restaurant-promos/falabella_parser.py --day $day 
 | File | Purpose |
 |---|---|
 | `.opencode/skills/restaurant-promos/SKILL.md` | Skill manifest & instructions |
-| `.opencode/skills/restaurant-promos/bci_parser.py` | BCI Plus API → restaurants by day → CSV |
-| `.opencode/skills/restaurant-promos/falabella_parser.py` | Falabella SSR HTML → benefit cards by day → CSV |
+| `.opencode/skills/restaurant-promos/tools/combine.py` | Merges both parsers → unified table (standard entry point) |
+| `.opencode/skills/restaurant-promos/tools/bci_parser.py` | BCI Plus API → restaurants by day → CSV |
+| `.opencode/skills/restaurant-promos/tools/falabella_parser.py` | Falabella SSR HTML → benefit cards by day → CSV |
 
-## Output columns
+## Standard output columns (combine.py)
 
-`Restaurant`, `Discount`, `TDC`, `Cuando`, `Comuna`, `Ends`, `TipoComida`
+`Restaurant`, `Discount`, `Bank`, `Comuna`, `Ends`, `Details`
+
+Filtered to Santiago / Región Metropolitana, deduplicated by name.
+`Details` shows deal-specific info (location, timing, constraints).
 
 ## Notes
 
