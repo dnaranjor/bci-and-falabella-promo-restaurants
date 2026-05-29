@@ -23,16 +23,16 @@ Both parsers accept a `--day` argument. Default is Saturday.
 
 ```powershell
 # Saturday (default) — unified output
-python .opencode/skills/restaurant-promos/tools/combine.py
+python skills/restaurant-promos/tools/combine.py
 
 # Run individual parsers
-python .opencode/skills/restaurant-promos/tools/bci_parser.py
-python .opencode/skills/restaurant-promos/tools/falabella_parser.py
+python skills/restaurant-promos/tools/bci_parser.py
+python skills/restaurant-promos/tools/falabella_parser.py
 
 # Any other day
-python .opencode/skills/restaurant-promos/tools/combine.py --day VIERNES
-python .opencode/skills/restaurant-promos/tools/bci_parser.py --day VIERNES
-python .opencode/skills/restaurant-promos/tools/falabella_parser.py --day Viernes
+python skills/restaurant-promos/tools/combine.py --day VIERNES
+python skills/restaurant-promos/tools/bci_parser.py --day VIERNES
+python skills/restaurant-promos/tools/falabella_parser.py --day Viernes
 ```
 
 ### Combine both sources for a given day
@@ -41,7 +41,7 @@ The standard entry point is `combine.py`, which merges both sources into a
 unified table (Santiago/RM only, deduplicated, sorted):
 
 ```powershell
-python .opencode/skills/restaurant-promos/tools/combine.py --day SABADO > restaurantes_sabado.csv
+python skills/restaurant-promos/tools/combine.py --day SABADO > restaurantes_sabado.csv
 ```
 
 ## Day name reference
